@@ -5,12 +5,13 @@ import { PublicKey } from '@solana/web3.js';
 // --- TOKEN AND PROGRAM ADDRESSES ---
 
 // !!! IMPORTANT: REPLACE THIS WITH YOUR $777 TOKEN MINT ADDRESS !!!
-// The address of the $777 SPL token mint.
-export const TOKEN_MINT_ADDRESS = new PublicKey('REPLACE_WITH_YOUR_TOKEN_MINT_ADDRESS_HERE');
+// The address of the $777 SPL token mint. This is a placeholder and MUST be replaced
+// with the actual mint address of the token you want to use for the raffle.
+export const TOKEN_MINT_ADDRESS = new PublicKey('77777777777777777777777777777777777777777777');
 
-// !!! IMPORTANT: REPLACE THIS WITH YOUR PROGRAM ID AFTER DEPLOYING !!!
 // The Program ID of the deployed Solana Raffle Smart Contract.
-export const RAFFLE_PROGRAM_ID = new PublicKey('REPLACE_WITH_YOUR_PROGRAM_ID_HERE');
+// This should be updated after you run `anchor deploy`.
+export const RAFFLE_PROGRAM_ID = new PublicKey('Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS');
 
 
 // --- STATIC WALLET ADDRESSES ---

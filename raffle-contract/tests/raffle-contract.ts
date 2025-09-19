@@ -1,4 +1,4 @@
-// Fix: Add declarations for Mocha's global functions to resolve TS errors
+// Add declarations for Mocha's global functions to resolve TS errors
 // when @types/mocha is not available in the environment.
 declare var describe: (name: string, fn: () => void) => void;
 declare var it: (name: string, fn: () => Promise<void>) => void;
@@ -7,7 +7,7 @@ declare var it: (name: string, fn: () => Promise<void>) => void;
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { assert } from "chai";
-// Fix: Import the contract's type definition from the IDL file to enable strong typing.
+// Import the contract's type definition from the IDL file to enable strong typing.
 import type { SolanaRaffleContract } from "../../types/idl";
 
 describe("raffle-contract", () => {
@@ -15,9 +15,11 @@ describe("raffle-contract", () => {
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
 
-  // The `program` object is already a valid Program instance.
-  // Fix: Cast the program to its specific IDL type for full type-safety and auto-completion.
-  const program = anchor.workspace.SolanaRaffleContract as Program<SolanaRaffleContract>;
+  // Cast the program to its specific IDL type for full type-safety and auto-completion.
+  // FIX: Cast through `any` to bypass the strict `Idl` constraint check. The `SolanaRaffleContract`
+  // type derived from the local IDL file doesn't perfectly match the library's `Idl` type,
+  // causing a type error. This preserves strong typing for the rest of the test file.
+  const program = anchor.workspace.SolanaRaffleContract as any as Program<SolanaRaffleContract>;
   const authority = provider.wallet.publicKey;
 
   it("Initializes a raffle account!", async () => {

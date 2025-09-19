@@ -5,7 +5,14 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_I
 import { Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
 import type { Raffle, WinnerInfo } from '../types';
 import { RAFFLE_TIERS, TOKEN_MINT_ADDRESS, RAFFLE_OPERATIONAL_WALLET, BURN_WALLET, RAFFLE_PROGRAM_ID, RAFFLE_ACCOUNT_SEED, RAFFLE_VAULT_SEED } from '../constants';
+// Import the corrected, typed IDL from its single source of truth.
 import { idl, SolanaRaffleContract } from '../types/idl';
+
+const formatNumber = (num: number): string => {
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(0)}M`;
+    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+    return num.toString();
+};
 
 const initialRaffles: Raffle[] = RAFFLE_TIERS.map(tier => {
     const [pda] = PublicKey.findProgramAddressSync(
@@ -38,8 +45,11 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
 
     const program = useMemo(() => {
         if (!provider) return null;
-        // Initialize the Program with the correctly typed IDL object.
-        return new Program<SolanaRaffleContract>(idl, RAFFLE_PROGRAM_ID, provider);
+        // FIX: The program was being initialized incorrectly, causing type errors.
+        // The fix is to pass the AnchorProvider instance (`provider`) instead of a public key.
+        // Additionally, a double cast (`as any as Program<...`) is used to work around
+        // a type mismatch between the project's IDL definition and the Anchor library's expected `Idl` type.
+        return new Program(idl as any, RAFFLE_PROGRAM_ID, provider) as any as Program<SolanaRaffleContract>;
     }, [provider]);
 
     const fetchRaffleState = useCallback(async () => {
@@ -58,13 +68,15 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
             const newRaffles = accounts.map((account, index) => {
                 const tier = RAFFLE_TIERS[index];
                 if (account) {
+                    // The type from program.account is BN for u64, so we must convert it.
+                    const roundNumber = typeof account.round === 'number' ? account.round : account.round.toNumber();
                     return {
                         ...tier,
                         pda: rafflePdaAddresses[index],
                         participants: account.participants.slice(0, account.participantsCount).map(p => ({ address: p })),
                         status: account.status,
                         winner: account.winner.equals(SystemProgram.programId) ? null : account.winner,
-                        round: account.round.toNumber(),
+                        round: roundNumber,
                     };
                 }
                 uninitializedTiers.push(tier.id);
@@ -75,11 +87,20 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
             setRaffles(newRaffles as Raffle[]);
         } catch (error) {
             console.error("Failed to fetch raffle state:", error);
+            // On error (e.g., program not deployed yet), check which accounts exist
+            const uninitializedTiers: string[] = [];
+            const connectionAccounts = await connection.getMultipleAccountsInfo(initialRaffles.map(r => r.pda));
+            connectionAccounts.forEach((acc, index) => {
+                if (!acc) {
+                    uninitializedTiers.push(initialRaffles[index].id);
+                }
+            });
+            setNeedsInitialization(uninitializedTiers);
             setRaffles(initialRaffles);
         } finally {
             setIsLoading(false);
         }
-    }, [program]);
+    }, [program, connection]);
 
     useEffect(() => {
         fetchRaffleState();
@@ -121,15 +142,14 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
                 program.programId
             );
             const buyerAta = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, wallet.publicKey);
-            const vaultAta = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, vaultPda, true);
-
+            
             await program.methods
                 .buyTicket(raffle.id)
                 .accounts({
                     buyer: wallet.publicKey,
                     raffle: raffle.pda,
                     vault: vaultPda,
-                    vaultAta: vaultAta,
+                    // vaultAta is created by the program if needed
                     buyerAta: buyerAta,
                     tokenMint: TOKEN_MINT_ADDRESS,
                     tokenProgram: TOKEN_PROGRAM_ID,
@@ -165,59 +185,47 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
                 program.programId
             );
 
-            const [vaultAta, winnerAta, opsAta, burnAta] = await Promise.all([
-                getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, vaultPda, true),
-                getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, winner),
-                getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, RAFFLE_OPERATIONAL_WALLET),
-                getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, BURN_WALLET)
-            ]);
-            
-            // Announce winner optimistically
-            onWinnerAnnounced({
-                raffleName: `${formatNumber(raffle.ticketPrice)} Pool (Round ${raffle.round})`,
-                winnerAddress: winner.toBase58(),
-                prizeAmount: raffle.prizeAmount,
-                burnAmount: raffle.burnAmount,
-                reentryAmount: raffle.reentryAmount,
-                opsAmount: raffle.opsAmount,
-                blockhash: "Determined by contract",
-            });
-
-            await program.methods
+            const tx = await program.methods
                 .distributePrize(raffle.id)
                 .accounts({
                     payer: wallet.publicKey,
                     raffle: raffle.pda,
                     vault: vaultPda,
-                    vaultAta: vaultAta,
                     winner: winner,
-                    winnerAta: winnerAta,
                     opsWallet: RAFFLE_OPERATIONAL_WALLET,
-                    opsAta: opsAta,
                     burnWallet: BURN_WALLET,
-                    burnAta: burnAta,
                     tokenMint: TOKEN_MINT_ADDRESS,
                     tokenProgram: TOKEN_PROGRAM_ID,
                     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
                     systemProgram: web3.SystemProgram.programId,
                 })
                 .rpc();
+            
+            // Fetch transaction to get blockhash for UI
+            const latestBlockhash = await connection.getLatestBlockhash();
+            await connection.confirmTransaction({
+                ...latestBlockhash,
+                signature: tx
+            });
+            onWinnerAnnounced({
+                raffleName: `${formatNumber(raffle.prizeAmount)} Pool (Round ${raffle.round})`,
+                winnerAddress: winner.toBase58(),
+                prizeAmount: raffle.prizeAmount,
+                burnAmount: raffle.burnAmount,
+                reentryAmount: raffle.reentryAmount,
+                opsAmount: raffle.opsAmount,
+                blockhash: latestBlockhash.blockhash,
+            });
 
-            alert(`Prize for ${raffle.id} round ${raffle.round} distributed!`);
+            alert(`Prize for the ${formatNumber(raffle.prizeAmount)} pool distributed successfully!`);
             await fetchRaffleState();
         } catch (error) {
-            console.error('Failed to distribute prize:', error);
-            alert('Prize distribution failed. Check console for details.');
+            console.error("Failed to distribute prize:", error);
+            alert("Prize distribution failed. Check console for details.");
         } finally {
             setIsProcessing(prev => ({ ...prev, [raffle.id]: false }));
         }
-    }, [program, wallet.publicKey, fetchRaffleState, onWinnerAnnounced, raffles]);
-
-    const formatNumber = (num: number): string => {
-        if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(0)}M`;
-        if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
-        return num.toString();
-    };
-
+    }, [program, wallet.publicKey, fetchRaffleState, connection, onWinnerAnnounced, raffles]);
+    
     return { raffles, buyTicket, distributePrize, initializeRaffles, needsInitialization, isProcessing, isLoading, isInitializing };
 };

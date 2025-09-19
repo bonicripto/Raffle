@@ -14,7 +14,8 @@ const formatNumber = (num: number): string => {
 
 const WinnerModal: React.FC<WinnerModalProps> = ({ winnerInfo, onClose }) => {
     const shortWinnerAddress = `${winnerInfo.winnerAddress.substring(0, 6)}...${winnerInfo.winnerAddress.substring(winnerInfo.winnerAddress.length - 6)}`;
-    const shortBlockhash = `${winnerInfo.blockhash.substring(0, 10)}...`;
+    const isBlockhashAvailable = winnerInfo.blockhash && winnerInfo.blockhash !== "Determined by contract";
+    const shortBlockhash = isBlockhashAvailable ? `${winnerInfo.blockhash.substring(0, 10)}...` : '';
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -51,9 +52,11 @@ const WinnerModal: React.FC<WinnerModalProps> = ({ winnerInfo, onClose }) => {
                         </ul>
                     </div>
 
-                    <div className="mt-6 text-center text-xs text-gray-500">
-                        <p>Winner selected using Solana blockhash: <span className="font-mono text-gray-400">{shortBlockhash}</span></p>
-                    </div>
+                    {isBlockhashAvailable && (
+                        <div className="mt-6 text-center text-xs text-gray-500">
+                            <p>Winner selected using Solana blockhash: <span className="font-mono text-gray-400">{shortBlockhash}</span></p>
+                        </div>
+                    )}
                 </div>
                  <div className="p-6 bg-[#10111a]/50 rounded-b-2xl text-center">
                     <button
