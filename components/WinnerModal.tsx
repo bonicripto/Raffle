@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { WinnerInfo } from '../types';
+import type { WinnerInfo } from '../types';
 import { TOKEN_SYMBOL } from '../constants';
 
 interface WinnerModalProps {

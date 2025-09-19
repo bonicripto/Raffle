@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey, SYSVAR_SLOT_HASHES_PUBKEY, SystemProgram } from '@solana/web3.js';
@@ -6,7 +5,6 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_I
 import { Program, AnchorProvider, web3 } from '@coral-xyz/anchor';
 import type { Raffle, WinnerInfo } from '../types';
 import { RAFFLE_TIERS, TOKEN_MINT_ADDRESS, RAFFLE_OPERATIONAL_WALLET, BURN_WALLET, RAFFLE_PROGRAM_ID, RAFFLE_ACCOUNT_SEED, RAFFLE_VAULT_SEED } from '../constants';
-// Fix: Import the IDL object and its derived type for strong type-safety with Anchor.
 import { idl, SolanaRaffleContract } from '../types/idl';
 
 const initialRaffles: Raffle[] = RAFFLE_TIERS.map(tier => {
@@ -40,8 +38,7 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
 
     const program = useMemo(() => {
         if (!provider) return null;
-        // Fix: Initialize the Program with the correctly typed IDL object.
-        // This resolves errors where the program's accounts and methods were not recognized.
+        // Initialize the Program with the correctly typed IDL object.
         return new Program<SolanaRaffleContract>(idl, RAFFLE_PROGRAM_ID, provider);
     }, [provider]);
 
@@ -55,7 +52,6 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
         setIsLoading(true);
         try {
             const rafflePdaAddresses = initialRaffles.map(r => r.pda);
-            // Fix: With the program correctly typed, program.account.raffleAccount is now correctly inferred.
             const accounts = await program.account.raffleAccount.fetchMultiple(rafflePdaAddresses);
 
             const uninitializedTiers: string[] = [];
@@ -127,7 +123,6 @@ export const useRaffles = (onWinnerAnnounced: (info: WinnerInfo) => void) => {
             const buyerAta = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, wallet.publicKey);
             const vaultAta = await getAssociatedTokenAddress(TOKEN_MINT_ADDRESS, vaultPda, true);
 
-            // Fix: With the program correctly typed, methods are inferred and this no longer causes a type error.
             await program.methods
                 .buyTicket(raffle.id)
                 .accounts({

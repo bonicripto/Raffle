@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import WalletContextProvider from './WalletContextProvider';
-import Header from './Header';
-import RaffleCard from './RaffleCard';
-import WinnerModal from './WinnerModal';
-import { useRaffles } from './useRaffles';
+import WalletContextProvider from './contexts/WalletContextProvider';
+import Header from './components/Header';
+import RaffleCard from './components/RaffleCard';
+import WinnerModal from './components/WinnerModal';
+import { useRaffles } from './hooks/useRaffles';
 import type { Raffle, WinnerInfo } from './types';
 import { useWallet } from '@solana/wallet-adapter-react';
 

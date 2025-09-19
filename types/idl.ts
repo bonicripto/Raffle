@@ -1,4 +1,3 @@
-
 // Fix: Export the IDL as a const object and derive the type from it.
 // This provides stronger typing and ensures compatibility with Anchor's Program class.
 export const idl = {
