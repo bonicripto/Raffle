@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raffle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://aistudiocdn.com/@solana/wallet-adapter-react-ui@^0.9.39/styles.css" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #10111a;
+    }
+    .gradient-text {
+      background: linear-gradient(to right, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    /* Custom styles for wallet adapter button */
+    .wallet-adapter-button-trigger {
+        background-color: #151620 !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        border: 1px solid #2a2c44 !important;
+        transition: all 0.2s ease-in-out;
+    }
+    .wallet-adapter-button-trigger:hover {
+        background-color: #2a2c44 !important;
+        border-color: #4f5284 !important;
+    }
+    /* Animation for winner modal */
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    .animate-fade-in-up {
+        animation: fade-in-up 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@solana/wallet-adapter-react": "https://aistudiocdn.com/@solana/wallet-adapter-react@^0.15.39",
+    "@solana/web3.js": "https://aistudiocdn.com/@solana/web3.js@^1.98.4",
+    "@solana/wallet-adapter-react-ui/": "https://aistudiocdn.com/@solana/wallet-adapter-react-ui@^0.9.39/",
+    "@solana/wallet-adapter-react-ui": "https://aistudiocdn.com/@solana/wallet-adapter-react-ui@^0.9.39",
+    "@solana/wallet-adapter-wallets": "https://aistudiocdn.com/@solana/wallet-adapter-wallets@^0.19.37",
+    "@solana/wallet-adapter-base": "https://aistudiocdn.com/@solana/wallet-adapter-base@^0.9.27",
+    "@solana/wallet-adapter-phantom": "https://aistudiocdn.com/@solana/wallet-adapter-phantom@^0.9.28",
+    "@solana/wallet-adapter-solflare": "https://aistudiocdn.com/@solana/wallet-adapter-solflare@^0.6.32",
+    "@coral-xyz/anchor": "https://aistudiocdn.com/@coral-xyz/anchor@^0.30.1",
+    "@solana/spl-token": "https://aistudiocdn.com/@solana/spl-token@^0.4.8"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

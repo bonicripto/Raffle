@@ -1,0 +1,5 @@
+{
+  "name": "Raffle",
+  "description": "A fully on-chain, transparent, and decentralized raffle platform on the Solana blockchain. Users can buy tickets with $777 tokens to win large prize pools.",
+  "requestFramePermissions": []
+}
